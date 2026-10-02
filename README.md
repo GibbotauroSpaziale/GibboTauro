@@ -1,4 +1,4 @@
-# sito-gibbotauro (repo unica) — gibbotauro.com
+# GibboTauro — gibbotauro.com
 
 Sito statico di **Gibbotauro Spaziale**: una repo sola, sotto-cartelle per pagina. Identità visiva unica (cyberpunk HUD + palette YouTube dark), design system condiviso in `css/`.
 
