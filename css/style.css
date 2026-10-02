@@ -1,0 +1,751 @@
+/* ===== Backstage — cyberpunk dark landing v2 (YouTube theme) ===== */
+
+:root {
+  --bg: #0F0F0F;
+  --surface: #272727;
+  --surface-alt: #212121;
+  --hairline: #3F3F3F;
+  --text: #F1F1F1;
+  --text-muted: #AAAAAA;
+  --accent: #FF0000;
+  --accent-hover: #FF4E45;
+  --link: #3EA6FF;
+  --error: #FF736C;
+  --font-display: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+  --space: 8px;
+  --cut: 14px; /* angolo tagliato */
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px; /* header height + gap */
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  line-height: 1.2;
+  margin: 0 0 calc(var(--space) * 3);
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+}
+
+h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: var(--space);
+}
+
+p { margin: 0 0 calc(var(--space) * 2); max-width: 65ch; }
+
+a { color: var(--link); }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--link);
+  color: var(--bg);
+  padding: calc(var(--space) * 1.5) calc(var(--space) * 2);
+  z-index: 100;
+  font-weight: 600;
+}
+.skip-link:focus {
+  left: var(--space);
+  top: var(--space);
+}
+
+/* ===== Griglia verticale (overlay) ===== */
+
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(120px - 1px),
+    rgba(255, 255, 255, 0.04) calc(120px - 1px) 120px
+  );
+}
+
+/* ===== Layout ===== */
+
+.container {
+  width: min(100% - calc(var(--space) * 4), 1120px);
+  margin-inline: auto;
+}
+
+.container-narrow {
+  width: min(100% - calc(var(--space) * 4), 720px);
+}
+
+.section { padding: calc(var(--space) * 8) 0; } /* 64px mobile */
+
+/* ===== Header ===== */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 56px;
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--hairline);
+  transition: box-shadow 0.2s ease;
+}
+
+.site-header.is-scrolled {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.logo {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* ===== Kicker HUD ===== */
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  margin: 0 0 calc(var(--space) * 2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem; /* 12px */
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+}
+
+/* ===== Buttons ===== */
+
+/* Corner cut + outline, spec ux-designer (fix v3.5 = geometria card + testo sopra).
+   Una box-shadow inset segue SOLO i lati del rettangolo: sulla diagonale del
+   taglio il bordo scompare (v3.1). Anche "esagono rientrato + cut ridotto"
+   NON funziona: le diagonali interno/esterno COINCIDONO e il delta è zero
+   (v3.2). Geometria GIUSTA = quella delle card: lo strato interno è rientrato
+   sul BOX (inset: var(--bt)) con taglio ridotto di var(--bt) → il delta col
+   bordo esterno segue anche le diagonali (v3.3).
+   Correz. v3.4: a 45° la distanza tra le due diagonali parallele è bt/√2 (~0.71×),
+   quindi il bordo al taglio usciva più sottile dei lati. Il CUT INTERNO usa
+   la variabile --ci = cut - bt·(2-√2): la diagonale interna è ora arretrata
+   PERPENDICOLARMENTE di bt esatto → spessore uniforme bt su ogni lato.
+   Stack (ogni layer clippato tranne il .btn-shell):
+   - .btn-shell    (flex, NON clippato) → glow pre/hover + focus ring
+   - .btn-wrap     (hexagon pieno, bg = colore bordo) → strato BORDO: unica
+     superficie che tocca il bordo esterno → forma la linea di 2-3px
+   - .btn          (in flow, bg trasparente) → dimensiona wrap e shell;
+     clip-path = hexagon interno card (ereditato dai pseudoelementi)
+   - .btn::before  (absolute, inset var(--bt), clip-path inherit) → BASE
+     opaca: il "volto" del bottone, blocca il colore del bordo al centro
+     (senza base opaca il bordo "sanguina", bug v3.0)
+   - .btn::after   (absolute, inset var(--bt), clip-path inherit) → FILL
+     semitrasparente (idle transparent → hover/active) sopra la base
+   - testo .btn    (inline content)
+   Strato testo SOPRA base/fill (fix v3.5): il testo inline si dipinge PRIMA
+   dei discendenti posizionati → senza z-index la base opaca lo coprirebbe.
+   I pseudoelementi sono quindi z-index:-1 (strato negativo, sotto il testo)
+   e .btn-shell porta isolation:isolate così il negativo resta dentro
+   l'unità del bottone (sopra gli sfondi delle sezioni, sotto bordo e testo)
+   anche quando .btn-wrap su :active crea un proprio stacking context.
+   Idle: fill trasparente → "solo outline". Hover: fill + bordo schiarito. */
+.btn-shell {
+  display: inline-flex;
+  isolation: isolate; /* confina lo strato z-index:-1 dei pseudo entro il bottone */
+  --cut: 14px;              /* corner cut CTA */
+  --bt: 3px;                /* spessore outline CTA */
+  --ci: calc(var(--cut) - calc(var(--bt) * 0.586)); /* cut interno: compensa il 45° (2-√2): spessore diagonale = spessore lati */
+  /* palette CTA primaria */
+  --btn-border: #FF0000;
+  --btn-border-hover: #FF4E45;
+  --btn-text: #FF0000;
+  --btn-text-hover: #FF4E45;
+  --btn-bg: rgba(15, 15, 15, 0.95); /* base quasi opaca: blocca il colore del bordo */
+  --btn-fill: rgba(255, 0, 0, 0.15);
+  --btn-fill-active: rgba(255, 0, 0, 0.22);
+  --btn-glow-idle: 0 0 24px rgba(255, 0, 0, 0.25); /* glow pre-hover: ombra, NON riempimento */
+  --btn-glow-hover: 0 0 32px rgba(255, 0, 0, 0.40);
+  min-width: 320px;
+  box-shadow: var(--btn-glow-idle);
+  transition: box-shadow 180ms ease-out;
+}
+.btn-shell:hover { box-shadow: var(--btn-glow-hover); }
+
+/* Focus ring sul wrapper NON clippato -> resta visibile nonostante il clip-path */
+.btn-shell:has(:focus-visible) {
+  outline: 2px solid var(--link);
+  outline-offset: 3px;
+}
+/* Sul .btn interno il ring verrebbe tagliato dal clip: si sopprime, il ring è sul .btn-shell */
+.btn-wrap > .btn:focus,
+.btn-wrap > .btn:focus-visible { outline: none; }
+
+.btn-shell:active > .btn-wrap { transform: scale(0.98); }
+
+/* Varianti: pill header ("Candidati") + submit form → cut 8px, outline 2px, grigio */
+.btn-shell--pill,
+.btn-shell--submit {
+  --cut: 8px;
+  --bt: 2px;
+  --btn-border: #3F3F3F;
+  --btn-border-hover: #F1F1F1;
+  --btn-text: #AAAAAA;
+  --btn-text-hover: #F1F1F1;
+  --btn-fill: rgba(241, 241, 241, 0.08);
+  --btn-fill-active: rgba(241, 241, 241, 0.14);
+  --btn-glow-idle: none;
+  --btn-glow-hover: none;
+  min-width: 0; /* il 320px base è solo per la CTA primaria */
+}
+.btn-shell--submit { width: 100%; }
+
+/* Strato BORDO: hexagon pieno col colore bordo → unica superficie che arriva
+   al bordo esterno; il delta col .btn::before rientrato forma la linea che
+   segue ANCHE le diagonali del taglio (geometria card) */
+.btn-wrap {
+  display: flex;
+  flex: 1;
+  background: var(--btn-border);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+  transition: background-color 180ms ease-out, transform 180ms ease-out;
+}
+.btn-shell:hover > .btn-wrap { background: var(--btn-border-hover); }
+
+/* Bottone: in flow (dimensiona wrap/shell), trasparente; gestisce layout,
+   focus e colore del testo. Il clip-path è l'hexagon interno con cut --ci
+   (spessore diagonale uniforme ai lati): viene ereditato dai pseudoelementi. */
+.btn-wrap > .btn {
+  position: relative;
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0 calc(var(--space) * 3);
+  font-family: var(--font-body);
+  font-size: 1.125rem; /* 18px */
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--btn-text);
+  text-decoration: none;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - var(--ci)) 0, 100% var(--ci), 100% 100%, var(--ci) 100%, 0 calc(100% - var(--ci)));
+  transition: color 180ms ease-out;
+}
+
+/* BASE: volto opaco del bottone rientrato di --bt → il "delta" di bordo
+   resta visibile su tutti i lati (incluso il taglio) e il colore del bordo
+   non sanguina al centro. Strato negativo (z-index -1): sotto il testo inline. */
+.btn-wrap > .btn::before {
+  content: "";
+  position: absolute;
+  z-index: -1; /* sotto il testo inline (v3.5; isolation su .btn-shell) */
+  inset: var(--bt);
+  background: var(--btn-bg);
+  clip-path: inherit; /* hexagon card del .btn */
+}
+
+/* FILL: semitrasparente sopra la base (idle trasparente → "solo outline";
+   hover/active = traslucenza vera, bordo mai coperto) */
+.btn-wrap > .btn::after {
+  content: "";
+  position: absolute;
+  z-index: -1; /* sotto il testo inline (v3.5) */
+  inset: var(--bt);
+  background: transparent;
+  clip-path: inherit;
+  transition: background-color 180ms ease-out;
+}
+.btn-shell:hover > .btn-wrap > .btn::after { background: var(--btn-fill); }
+.btn-wrap > .btn:active::after { background: var(--btn-fill-active); }
+
+/* Hover: testo schiarito (il fill sta già sotto, nel ::after) */
+.btn-shell:hover > .btn-wrap > .btn { color: var(--btn-text-hover); }
+
+/* Pill + submit: font/height ridotti (spec identica al pill) */
+.btn-shell--pill > .btn-wrap > .btn,
+.btn-shell--submit > .btn-wrap > .btn {
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 calc(var(--space) * 2.5);
+}
+.btn-shell--submit > .btn-wrap > .btn { font-size: 1rem; } /* 16px */
+
+/* ===== Hero ===== */
+
+.hero {
+  position: relative;
+  padding: calc(var(--space) * 8) 0; /* 64px mobile */
+}
+
+/* Scanlines */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.02) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.hero-sub {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin-bottom: calc(var(--space) * 3);
+}
+
+.micro-proof {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: calc(var(--space) * 4);
+}
+
+.hero-actions { display: flex; flex-wrap: wrap; gap: calc(var(--space) * 2); }
+
+/* Glitch H1: solo desktop, solo se l'utente non chiede movimento ridotto */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .hero h1 { position: relative; }
+
+  .hero h1::before,
+  .hero h1::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    color: var(--text);
+  }
+
+  .hero h1::before {
+    text-shadow: 2px 0 var(--accent);
+    animation: glitch-a 6s infinite;
+  }
+
+  .hero h1::after {
+    text-shadow: -2px 0 var(--link);
+    animation: glitch-b 6s infinite;
+  }
+}
+
+@keyframes glitch-a {
+  0%, 92%   { opacity: 0;    transform: translate(0, 0); }
+  93%       { opacity: 0.85; transform: translate(-3px, 1px); }
+  95%       { opacity: 0.85; transform: translate(2px, -1px); }
+  96%, 100% { opacity: 0;    transform: translate(0, 0); }
+}
+
+@keyframes glitch-b {
+  0%, 92%   { opacity: 0;    transform: translate(0, 0); }
+  93%       { opacity: 0.85; transform: translate(3px, -1px); }
+  95%       { opacity: 0.85; transform: translate(-2px, 1px); }
+  96%, 100% { opacity: 0;    transform: translate(0, 0); }
+}
+
+/* ===== Grid & cards ===== */
+
+.grid { display: grid; gap: calc(var(--space) * 2); }
+.grid-3 { grid-template-columns: 1fr; }
+
+.card {
+  position: relative;
+  margin: 0;
+  padding: calc(var(--space) * 3);
+  background: var(--hairline); /* ring = bordo 1px */
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  background: var(--surface);
+  clip-path: polygon(0 0, calc(100% - calc(var(--cut) - 1px)) 0, 100% calc(var(--cut) - 1px), 100% 100%, calc(var(--cut) - 1px) 100%, 0 calc(100% - calc(var(--cut) - 1px)));
+  transition: background-color 0.15s ease;
+}
+
+.card:hover::before { background: var(--surface-alt); }
+
+.card > * { position: relative; z-index: 1; }
+
+.card blockquote {
+  margin: 0 0 calc(var(--space) * 2);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.card figcaption {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Placeholder: trattato come slot "da compilare" — senza ring, frame tratteggiato */
+.card-placeholder { background: transparent; }
+.card-placeholder::before { background: var(--surface-alt); }
+.card-placeholder:hover::before { background: var(--surface-alt); }
+
+.card-placeholder::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  z-index: 1;
+  border: 1px dashed var(--hairline);
+  pointer-events: none;
+}
+
+.card-placeholder blockquote,
+.card-placeholder figcaption {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.placeholder-note {
+  margin-top: calc(var(--space) * 3);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  border-left: 2px solid var(--hairline);
+  padding-left: calc(var(--space) * 2);
+  max-width: 70ch;
+}
+
+/* ===== Video slots ===== */
+
+.grid-videos {
+  grid-template-columns: 1fr;
+  gap: calc(var(--space) * 2.5);
+}
+
+.video-slot { margin: 0; }
+
+.video-thumb {
+  aspect-ratio: 16 / 9;
+  background: var(--surface-alt);
+  border: 1px dashed var(--hairline);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem; /* 12px */
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+.video-metric {
+  display: inline-block;
+  margin-top: calc(var(--space) * 1.5);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--link);
+  background: rgba(62, 166, 255, 0.12);
+  padding: 4px calc(var(--space) * 1.5);
+  border-radius: 0;
+}
+
+/* ===== Metodo ===== */
+
+.method { background: var(--surface-alt); }
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space) * 5);
+}
+
+.step {
+  display: flex;
+  gap: calc(var(--space) * 3);
+  align-items: flex-start;
+}
+
+.step-num {
+  font-family: var(--font-mono);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.method-cta { margin-top: calc(var(--space) * 6); }
+
+/* ===== Chi sono ===== */
+
+.about-grid {
+  display: grid;
+  gap: calc(var(--space) * 4);
+}
+
+.about-photo {
+  aspect-ratio: 4 / 5;
+  max-width: 320px;
+  background: var(--surface-alt);
+  border: 1px dashed var(--hairline);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+.channel-logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--space) * 1.5);
+  margin-top: calc(var(--space) * 3);
+}
+
+.channel-pill {
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem; /* 11px */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: calc(var(--space) * 1) calc(var(--space) * 2);
+  border-radius: 0;
+  border: 1px dashed var(--hairline);
+}
+
+/* ===== CTA block ===== */
+
+.cta-block {
+  background: var(--surface);
+  border-top: 1px solid var(--hairline);
+  padding: calc(var(--space) * 8) 0;
+}
+
+.cta-block h2 { color: var(--text); }
+
+.cta-sub {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: calc(var(--space) * 4);
+}
+
+.cta-form {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space) * 2.5);
+}
+
+.field { display: flex; flex-direction: column; gap: calc(var(--space) * 0.75); }
+
+.field label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.field input,
+.field select,
+.field textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  min-height: 48px;
+  padding: calc(var(--space) * 1.5) calc(var(--space) * 2);
+  border: 1px solid var(--hairline);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.field textarea { min-height: 96px; resize: vertical; }
+
+.field input::placeholder,
+.field textarea::placeholder { color: var(--text-muted); }
+
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"] {
+  border-color: var(--accent-hover);
+}
+
+.field-error {
+  color: var(--error);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Honeypot: fuori schermo per gli umani */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.form-success {
+  margin-top: calc(var(--space) * 3);
+  padding: calc(var(--space) * 2.5);
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--hairline);
+  border-radius: 0;
+  font-weight: 600;
+  max-width: 65ch;
+}
+
+/* ===== Footer ===== */
+
+.site-footer {
+  background: var(--bg);
+  border-top: 1px solid var(--hairline);
+  padding: calc(var(--space) * 6) 0;
+}
+
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space) * 2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem; /* 12px */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.footer-inner p { margin: 0; }
+
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--space) * 2.5);
+}
+
+.footer-nav a {
+  color: var(--text-muted);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.footer-nav a:hover { color: var(--link); }
+
+/* ===== Breakpoints ===== */
+
+@media (max-width: 639px) {
+  .grid-overlay { display: none; }
+}
+
+@media (max-width: 479px) {
+  .hero-actions .btn-shell,
+  .method-cta .btn-shell {
+    width: 100%;
+  }
+}
+
+@media (min-width: 640px) {
+  .section { padding: calc(var(--space) * 12) 0; } /* 96px */
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-videos { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .site-header { height: 72px; }
+  .hero { padding: calc(var(--space) * 15) 0; } /* 120px */
+  .section { padding: calc(var(--space) * 15) 0; } /* 120px */
+  .grid-videos { grid-template-columns: repeat(4, 1fr); }
+  .about-grid {
+    grid-template-columns: 320px 1fr;
+    align-items: start;
+    gap: calc(var(--space) * 6);
+  }
+  .footer-inner {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container { width: min(100% - calc(var(--space) * 8), 1200px); }
+}
+
+/* ===== Reduced motion ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

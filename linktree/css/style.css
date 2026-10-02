@@ -1,0 +1,206 @@
+/* ============================================================
+   linktree.gibbotauro.com — link-in-bio
+   Stessa identità visiva del sito principale (tokens condivisi):
+   palette dark YouTube, corner-cut, Space Grotesk + JetBrains Mono.
+   NOTA: pagina volutamente autonoma (repo separato su sottodominio);
+   i tokens replicano quelli di sitogibbotauro senza dipendere dal repo.
+   ============================================================ */
+
+:root {
+  /* palette (allineata a style.css del sito principale) */
+  --bg: #0F0F0F;
+  --surface: #161616;
+  --surface-alt: #1F1F1F;
+  --hairline: #2A2A2A;
+  --text: #F1F1F1;
+  --text-muted: #AAAAAA;
+  --accent: #FF0000;
+  --accent-hover: #FF4E45;
+  --link: #3EA6FF;
+
+  /* tipografia */
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* corner-cut (stesso sistema del sito: compensazione 45° per bordo uniforme) */
+  --cut: 14px;
+  --bt: 2px;
+  --ci: calc(var(--cut) - calc(var(--bt) * 0.586));
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+/* griglia HUD di sfondo (sottile, come sul sito) */
+.link-page {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.bio {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ---------- header profilo ---------- */
+
+.bio-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 4px;
+  object-fit: cover;
+  margin-bottom: 14px;
+  /* ring accent + angolo tagliato */
+  border: 2px solid var(--accent);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut),
+                     100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+}
+
+.name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.handle {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tagline {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* ---------- lista link ---------- */
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+  /* hexagon corner-cut: angolo tagliato sia lato sinistro-alto che destro-basso */
+  clip-path: polygon(0 0, calc(100% - var(--ci)) 0, 100% var(--ci),
+                     100% 100%, var(--ci) 100%, 0 calc(100% - var(--ci)));
+  transition: background-color 180ms ease-out, transform 180ms ease-out;
+  min-height: 44px; /* target touch >= 44px */
+}
+
+/* linea di contorno: bordo offset via parent + background interno */
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+  clip-path: inherit;
+}
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: var(--bt);
+  background: inherit;
+  clip-path: inherit;
+  pointer-events: none;
+}
+
+.btn-label {
+  font-size: 1rem;
+  font-weight: 600;
+  position: relative; /* sopra il layer di bordo */
+  z-index: 1;
+}
+
+.btn-sub {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  position: relative;
+  z-index: 1;
+}
+
+.btn--primary {
+  background: var(--surface-alt);
+  border: none;
+}
+.btn--primary .btn-label { color: var(--text); }
+
+.btn:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+}
+.btn:hover .btn-label,
+.btn:hover .btn-sub { color: #0F0F0F; }
+
+.btn:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 3px;
+}
+
+/* ---------- footer ---------- */
+
+.bio-foot {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+}
+
+.foot-link {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 8px;
+}
+.foot-link:hover { color: var(--link); }
+
+/* ---------- riduzione movimento ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+  .btn:hover { transform: none; }
+}
